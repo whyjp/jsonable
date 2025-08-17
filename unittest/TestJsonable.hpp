@@ -420,19 +420,33 @@ public:
             throw std::runtime_error("Expected JSON object for SimpleProduct");
         }
 
+        // 기존 방식 (호환성 유지)
         name_ = json::Jsonable::getString(value, "name", "");
         id_ = static_cast<int>(json::Jsonable::getInt64(value, "id", 0));
         price_ = json::Jsonable::getDouble(value, "price", 0.0);
         available_ = json::Jsonable::getBool(value, "available", false);
+        
+        // 새로운 메타프로그래밍 방식 (주석으로 예시)
+        // json::Jsonable::setField(value, "name", name_);
+        // json::Jsonable::setField(value, "id", id_);
+        // json::Jsonable::setField(value, "price", price_);
+        // json::Jsonable::setField(value, "available", available_);
     }
 
     rapidjson::Value toValue(rapidjson::Document::AllocatorType& allocator) const override {
         rapidjson::Value product(rapidjson::kObjectType);
         
+        // 기존 방식 (호환성 유지)
         product.AddMember("name", rapidjson::Value(name_.c_str(), allocator), allocator);
         product.AddMember("id", rapidjson::Value(id_), allocator);
         product.AddMember("price", rapidjson::Value(price_), allocator);
         product.AddMember("available", rapidjson::Value(available_), allocator);
+        
+        // 새로운 메타프로그래밍 방식 (주석으로 예시)
+        // json::Jsonable::addField(product, "name", name_, allocator);
+        // json::Jsonable::addField(product, "id", id_, allocator);
+        // json::Jsonable::addField(product, "price", price_, allocator);
+        // json::Jsonable::addField(product, "available", available_, allocator);
         
         return product;
     }
@@ -499,6 +513,67 @@ public:
 
     bool operator==(const NonIntrusiveData& other) const {
         return title_ == other.title_ && count_ == other.count_;
+    }
+};
+
+/**
+ * @brief 메타프로그래밍 기반 자동화 예제
+ * 사용자가 functor만 제공하면 iteration을 라이브러리가 자동 처리
+ */
+class MetaProgrammingExample : public json::Jsonable {
+private:
+    std::string title_;
+    std::vector<int> numbers_;
+    std::vector<std::string> tags_;
+    std::vector<SimpleProduct> products_;
+    
+public:
+    MetaProgrammingExample() = default;
+    MetaProgrammingExample(const std::string& title, 
+                          const std::vector<int>& numbers,
+                          const std::vector<std::string>& tags,
+                          const std::vector<SimpleProduct>& products)
+        : title_(title), numbers_(numbers), tags_(tags), products_(products) {}
+    
+    void fromDocument(const rapidjson::Value& value) override {
+        if (!value.IsObject()) {
+            throw std::runtime_error("Expected JSON object for MetaProgrammingExample");
+        }
+        
+        // 메타프로그래밍 기반 자동 필드 설정
+        json::Jsonable::setField(value, "title", title_);
+        
+        // 메타프로그래밍 기반 자동 배열 추출
+        numbers_ = json::Jsonable::getArray<int>(value, "numbers");
+        tags_ = json::Jsonable::getArray<std::string>(value, "tags");
+        products_ = json::Jsonable::getArray<SimpleProduct>(value, "products");
+    }
+    
+    rapidjson::Value toValue(rapidjson::Document::AllocatorType& allocator) const override {
+        rapidjson::Value obj(rapidjson::kObjectType);
+        
+        // 메타프로그래밍 기반 자동 필드 추가
+        json::Jsonable::addField(obj, "title", title_, allocator);
+        
+        // 메타프로그래밍 기반 자동 배열 생성 (직접 AddMember 사용)
+        obj.AddMember("numbers", json::Jsonable::createArray(numbers_, allocator), allocator);
+        obj.AddMember("tags", json::Jsonable::createArray(tags_, allocator), allocator);
+        obj.AddMember("products", json::Jsonable::createArray(products_, allocator), allocator);
+        
+        return obj;
+    }
+    
+    // 접근자들
+    const std::string& getTitle() const { return title_; }
+    const std::vector<int>& getNumbers() const { return numbers_; }
+    const std::vector<std::string>& getTags() const { return tags_; }
+    const std::vector<SimpleProduct>& getProducts() const { return products_; }
+    
+    bool operator==(const MetaProgrammingExample& other) const {
+        return title_ == other.title_ && 
+               numbers_ == other.numbers_ && 
+               tags_ == other.tags_ && 
+               products_ == other.products_;
     }
 };
 

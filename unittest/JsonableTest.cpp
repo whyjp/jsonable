@@ -866,4 +866,141 @@ TEST_F(JsonableTest, ConfigurationLoadingScenarioTest) {
     std::string savedConfig = config.toJson();
     EXPECT_TRUE(savedConfig.find("29.99") != std::string::npos);
     EXPECT_TRUE(savedConfig.find("false") != std::string::npos);
+}
+
+// 메타프로그래밍 기반 자동화 테스트
+TEST_F(JsonableTest, MetaProgrammingAutomationTest) {
+    using namespace test;
+    
+    // 테스트 데이터 생성
+    std::vector<int> numbers = {1, 2, 3, 4, 5};
+    std::vector<std::string> tags = {"test", "meta", "programming"};
+    std::vector<SimpleProduct> products = {
+        SimpleProduct("Product A", 1, 10.0, true),
+        SimpleProduct("Product B", 2, 20.0, false)
+    };
+    
+    MetaProgrammingExample example("Meta Example", numbers, tags, products);
+    
+    // 직렬화
+    std::string json = example.toJson();
+    
+    // JSON 내용 검증
+    EXPECT_TRUE(json.find("Meta Example") != std::string::npos);
+    EXPECT_TRUE(json.find("[1,2,3,4,5]") != std::string::npos);
+    EXPECT_TRUE(json.find("test") != std::string::npos);
+    EXPECT_TRUE(json.find("Product A") != std::string::npos);
+    
+    // 역직렬화
+    MetaProgrammingExample restored;
+    restored.fromJson(json);
+    
+    // 자동 타입 변환 검증
+    EXPECT_EQ(restored.getTitle(), "Meta Example");
+    EXPECT_EQ(restored.getNumbers().size(), 5);
+    EXPECT_EQ(restored.getTags().size(), 3);
+    EXPECT_EQ(restored.getProducts().size(), 2);
+    
+    // 구체적인 값 검증
+    EXPECT_EQ(restored.getNumbers()[0], 1);
+    EXPECT_EQ(restored.getNumbers()[4], 5);
+    EXPECT_EQ(restored.getTags()[0], "test");
+    EXPECT_EQ(restored.getTags()[2], "programming");
+    EXPECT_EQ(restored.getProducts()[0].getName(), "Product A");
+    EXPECT_EQ(restored.getProducts()[1].getId(), 2);
+    
+    // 완전한 동등성 검증
+    EXPECT_EQ(example, restored);
+}
+
+// 자동 배열 처리 테스트
+TEST_F(JsonableTest, AutoArrayProcessingTest) {
+    std::string jsonStr = R"({
+        "integers": [10, 20, 30],
+        "strings": ["hello", "world", "auto"],
+        "doubles": [1.1, 2.2, 3.3]
+    })";
+    
+    auto doc = json::Jsonable::parseJson(jsonStr);
+    
+    // 메타프로그래밍 기반 자동 배열 추출
+    auto integers = json::Jsonable::getArray<int>(doc, "integers");
+    auto strings = json::Jsonable::getArray<std::string>(doc, "strings");
+    auto doubles = json::Jsonable::getArray<double>(doc, "doubles");
+    
+    // 검증
+    ASSERT_EQ(integers.size(), 3);
+    EXPECT_EQ(integers[0], 10);
+    EXPECT_EQ(integers[2], 30);
+    
+    ASSERT_EQ(strings.size(), 3);
+    EXPECT_EQ(strings[0], "hello");
+    EXPECT_EQ(strings[2], "auto");
+    
+    ASSERT_EQ(doubles.size(), 3);
+    EXPECT_DOUBLE_EQ(doubles[0], 1.1);
+    EXPECT_DOUBLE_EQ(doubles[2], 3.3);
+    
+    // 자동 배열 생성 테스트
+    rapidjson::Document newDoc;
+    newDoc.SetObject();
+    auto& allocator = newDoc.GetAllocator();
+    
+    auto intArray = json::Jsonable::createArray(integers, allocator);
+    auto stringArray = json::Jsonable::createArray(strings, allocator);
+    auto doubleArray = json::Jsonable::createArray(doubles, allocator);
+    
+    newDoc.AddMember("integers", intArray, allocator);
+    newDoc.AddMember("strings", stringArray, allocator);
+    newDoc.AddMember("doubles", doubleArray, allocator);
+    
+    std::string result = json::Jsonable::valueToString(newDoc);
+    EXPECT_TRUE(result.find("[10,20,30]") != std::string::npos);
+    EXPECT_TRUE(result.find("hello") != std::string::npos);
+    EXPECT_TRUE(result.find("1.1") != std::string::npos);
+}
+
+// 자동 필드 설정 테스트
+TEST_F(JsonableTest, AutoFieldSettingTest) {
+    std::string jsonStr = R"({
+        "name": "AutoField",
+        "age": 25,
+        "height": 175.5,
+        "active": true
+    })";
+    
+    auto doc = json::Jsonable::parseJson(jsonStr);
+    
+    // 메타프로그래밍 기반 자동 필드 설정
+    std::string name;
+    int age;
+    double height;
+    bool active;
+    
+    json::Jsonable::setField(doc, "name", name);
+    json::Jsonable::setField(doc, "age", age);
+    json::Jsonable::setField(doc, "height", height);
+    json::Jsonable::setField(doc, "active", active);
+    
+    // 검증
+    EXPECT_EQ(name, "AutoField");
+    EXPECT_EQ(age, 25);
+    EXPECT_DOUBLE_EQ(height, 175.5);
+    EXPECT_TRUE(active);
+    
+    // 자동 필드 추가 테스트
+    rapidjson::Document newDoc;
+    newDoc.SetObject();
+    auto& allocator = newDoc.GetAllocator();
+    
+    json::Jsonable::addField(newDoc, "name", name, allocator);
+    json::Jsonable::addField(newDoc, "age", age, allocator);
+    json::Jsonable::addField(newDoc, "height", height, allocator);
+    json::Jsonable::addField(newDoc, "active", active, allocator);
+    
+    std::string result = json::Jsonable::valueToString(newDoc);
+    EXPECT_TRUE(result.find("AutoField") != std::string::npos);
+    EXPECT_TRUE(result.find("25") != std::string::npos);
+    EXPECT_TRUE(result.find("175.5") != std::string::npos);
+    EXPECT_TRUE(result.find("true") != std::string::npos);
 } 

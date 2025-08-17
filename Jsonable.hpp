@@ -8,8 +8,98 @@
 #include <optional>
 #include <functional>
 #include <cstdint>
+#include <type_traits>
+#include <utility>
 
 namespace json {
+
+// 전방 선언
+class Jsonable;
+
+// ========================================
+// 메타프로그래밍 타입 특성 (Type Traits)
+// ========================================
+
+/**
+ * @brief Jsonable 타입인지 확인하는 타입 특성
+ */
+template<typename T>
+struct is_jsonable : std::is_base_of<Jsonable, T> {};
+
+template<typename T>
+constexpr bool is_jsonable_v = is_jsonable<T>::value;
+
+/**
+ * @brief 기본 JSON 타입인지 확인하는 타입 특성들
+ */
+template<typename T>
+struct is_json_primitive : std::disjunction<
+    std::is_same<T, std::string>,
+    std::is_same<T, int>,
+    std::is_same<T, int64_t>,
+    std::is_same<T, uint32_t>,
+    std::is_same<T, uint64_t>,
+    std::is_same<T, float>,
+    std::is_same<T, double>,
+    std::is_same<T, bool>
+> {};
+
+template<typename T>
+constexpr bool is_json_primitive_v = is_json_primitive<T>::value;
+
+/**
+ * @brief 자동 변환기 (Auto Converter) - 메타프로그래밍 기반
+ */
+struct AutoConverter {
+    template<typename T>
+    static rapidjson::Value toValue(const T& item, rapidjson::Document::AllocatorType& allocator) {
+        if constexpr (std::is_same_v<T, std::string>) {
+            return rapidjson::Value(item.c_str(), allocator);
+        }
+        else if constexpr (std::is_arithmetic_v<T>) {
+            return rapidjson::Value(item);
+        }
+        else if constexpr (is_jsonable_v<T>) {
+            return item.toValue(allocator);
+        }
+        else {
+            static_assert(is_json_primitive_v<T> || is_jsonable_v<T>, 
+                         "Type must be JSON primitive or inherit from Jsonable");
+            return rapidjson::Value(); // 컴파일 에러 방지용
+        }
+    }
+    
+    template<typename T>
+    static T fromValue(const rapidjson::Value& value) {
+        if constexpr (std::is_same_v<T, std::string>) {
+            return value.IsString() ? std::string(value.GetString()) : std::string();
+        }
+        else if constexpr (std::is_same_v<T, int>) {
+            return value.IsInt() ? value.GetInt() : 0;
+        }
+        else if constexpr (std::is_same_v<T, int64_t>) {
+            return value.IsInt64() ? value.GetInt64() : 0;
+        }
+        else if constexpr (std::is_same_v<T, double>) {
+            return value.IsDouble() ? value.GetDouble() : 0.0;
+        }
+        else if constexpr (std::is_same_v<T, bool>) {
+            return value.IsBool() ? value.GetBool() : false;
+        }
+        else if constexpr (is_jsonable_v<T>) {
+            T obj;
+            if (value.IsObject()) {
+                obj.fromDocument(value);
+            }
+            return obj;
+        }
+        else {
+            static_assert(is_json_primitive_v<T> || is_jsonable_v<T>, 
+                         "Type must be JSON primitive or inherit from Jsonable");
+            return T{}; // 컴파일 에러 방지용
+        }
+    }
+};
 
 /**
  * @brief JSON 직렬화/역직렬화를 위한 기본 인터페이스
@@ -349,6 +439,21 @@ public:
         });
     }
 
+    /**
+     * @brief 자동 배열 추출 (메타프로그래밍 기반) - 타입 자동 판별
+     */
+    template<typename T>
+    static std::vector<T> getArray(const rapidjson::Value& obj, const char* key) {
+        std::vector<T> result;
+        if (isArray(obj, key)) {
+            const auto& array = obj[key];
+            for (const auto& element : array.GetArray()) {
+                result.push_back(AutoConverter::fromValue<T>(element));
+            }
+        }
+        return result;
+    }
+
     // ========================================
     // Iteration Functor 패턴 - 객체 처리
     // ========================================
@@ -379,12 +484,34 @@ public:
         }
     }
 
+    /**
+     * @brief 자동 필드 설정 (메타프로그래밍 기반)
+     * 사용자가 필드 이름과 변수 참조만 제공하면 자동으로 타입을 판별하여 설정
+     */
+    template<typename T>
+    static void setField(const rapidjson::Value& obj, const char* key, T& field) {
+        if (obj.HasMember(key)) {
+            field = AutoConverter::fromValue<T>(obj[key]);
+        }
+    }
+
+    /**
+     * @brief 자동 필드 추가 (메타프로그래밍 기반)
+     * 사용자가 필드 이름과 값만 제공하면 자동으로 타입을 판별하여 JSON에 추가
+     */
+    template<typename T>
+    static void addField(rapidjson::Value& obj, const char* key, const T& value, 
+                        rapidjson::Document::AllocatorType& allocator) {
+        obj.AddMember(rapidjson::Value(key, allocator), 
+                     AutoConverter::toValue(value, allocator), allocator);
+    }
+
     // ========================================
     // 배열/객체 생성 헬퍼 (Functor 패턴)
     // ========================================
 
     /**
-     * @brief 배열 생성 (타입별 변환 함수 사용)
+     * @brief 배열 생성 (사용자 정의 변환 함수 사용) - 기존 호환성
      */
     template<typename T>
     static rapidjson::Value createArray(const std::vector<T>& items,
@@ -393,6 +520,19 @@ public:
         rapidjson::Value array(rapidjson::kArrayType);
         for (const auto& item : items) {
             array.PushBack(converter(item), allocator);
+        }
+        return array;
+    }
+
+    /**
+     * @brief 배열 자동 생성 (메타프로그래밍 기반) - 새로운 자동화된 방식
+     */
+    template<typename T>
+    static rapidjson::Value createArray(const std::vector<T>& items,
+                                       rapidjson::Document::AllocatorType& allocator) {
+        rapidjson::Value array(rapidjson::kArrayType);
+        for (const auto& item : items) {
+            array.PushBack(AutoConverter::toValue(item, allocator), allocator);
         }
         return array;
     }
