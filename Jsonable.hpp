@@ -118,33 +118,6 @@ public:
     // 편의 메서드들
     // ========================================
     
-    /**
-     * @brief 빠른 JSON 문자열 생성
-     * 
-     * @return JSON 문자열
-     */
-    std::string toString() const {
-        return toJson();
-    }
-    
-    /**
-     * @brief 빠른 JSON 문자열 파싱
-     * 
-     * @param jsonStr JSON 문자열
-     */
-    void fromString(const std::string& jsonStr) {
-        fromJson(jsonStr);
-    }
-    
-    /**
-     * @brief 객체 비교 (JSON 기반)
-     * 
-     * @param other 비교할 객체
-     * @return JSON 표현이 같으면 true
-     */
-    bool equals(const Jsonable& other) const {
-        return toJson() == other.toJson();
-    }
     
     /**
      * @brief 깊은 복사 생성
@@ -167,14 +140,14 @@ public:
      * @brief 등호 연산자 (JSON 기반 비교)
      */
     bool operator==(const Jsonable& other) const {
-        return equals(other);
+        return toJson() == other.toJson();
     }
     
     /**
      * @brief 부등호 연산자
      */
     bool operator!=(const Jsonable& other) const {
-        return !equals(other);
+        return toJson() != other.toJson();
     }
     
     // ========================================
@@ -183,21 +156,19 @@ public:
     
     // FromJsonable에서 상속받은 기능들:
     // - fromJson(jsonStr)
-    // - loadField<T>(key, target, validator)
-    // - loadArrayField<T>(key, target, maxSize)
+    // - loadFromJson() 순수 가상 함수
     
     // ToJsonable에서 상속받은 기능들:
     // - toJson()
-    // - saveFieldIf<T>(key, value, condition)
-    // - saveArrayField<T>(key, values, filter)
+    // - saveToJson() 순수 가상 함수
     
     // JsonableBase에서 상속받은 기능들:
     // - getString(), setString() 등 모든 기본 타입 처리
-    // - getArray<T>(), setArray<T>() 등 배열 처리
+    // - getArray<T>(), setArray<T>() 등 배열 처리  
     // - beginObject(), endObject() 등 Begin/End 스타일
+    // - pushString(), pushInt64() 등 배열 요소 추가
     // - hasKey(), isArray(), isObject() 등 상태 확인
     // - iterateArray(), iterateObject() 등 순회 기능
-    // - getField<T>(), setField<T>() 등 메타프로그래밍 기능
 };
 
 /**

@@ -89,117 +89,19 @@ public:
     virtual void saveToJson() = 0;
     
     // ========================================
-    // 편의 메서드들 (JsonableImpl에서 상속됨)
+    // 편의 메서드들 (JsonableBase에서 상속됨)
     // ========================================
     
     // 이미 JsonableBase에서 제공되므로 여기서는 주석으로만 명시
     // setString(key, value), setInt64(key, value), setArray<T>(key, values) 등
     // beginObject(key), endObject(), beginArray(key), endArray()
     // pushString(value), pushInt64(value) 등
-    // setField<T>(key, value) 등
     
-    // ========================================
-    // 고급 직렬화 유틸리티
-    // ========================================
-    
-    /**
-     * @brief 조건부 필드 저장
-     * 
-     * @param key 필드명
-     * @param value 저장할 값
-     * @param condition 저장 조건 (true일 때만 저장)
-     */
-    template<typename T>
-    void saveFieldIf(const char* key, const T& value, bool condition);
-    
-    /**
-     * @brief 조건부 필드 저장 (값 기반 조건)
-     * 
-     * @param key 필드명
-     * @param value 저장할 값
-     * @param predicate 저장 조건 함수
-     */
-    template<typename T>
-    void saveFieldIf(const char* key, const T& value, std::function<bool(const T&)> predicate);
-    
-    /**
-     * @brief 배열 필드 조건부 저장
-     * 
-     * @param key 배열 필드명
-     * @param values 저장할 배열
-     * @param filter 필터 함수 (선택적)
-     */
-    template<typename T>
-    void saveArrayField(const char* key, const std::vector<T>& values, 
-                       std::function<bool(const T&)> filter = nullptr);
     
 
 protected:
-    /**
-     * @brief JSON 직렬화 전 호출되는 가상 함수
-     * 
-     * 파생 클래스에서 오버라이드하여 전처리 로직 추가 가능
-     */
-    virtual void onBeforeSerialize() {}
-    
-    /**
-     * @brief JSON 직렬화 후 호출되는 가상 함수
-     * 
-     * 파생 클래스에서 오버라이드하여 후처리 로직 추가 가능
-     */
-    virtual void onAfterSerialize() {}
-    
-    /**
-     * @brief 직렬화 오류 시 호출되는 가상 함수
-     * 
-     * 파생 클래스에서 오버라이드하여 커스텀 오류 처리 가능
-     */
-    virtual void onSerializeError(const std::string& error) { (void)error; }
+    // 파생 클래스 전용 영역 (필요시 확장)
 };
 
-/**
- * 템플릿 메서드 구현
- */
-template<typename T>
-void ToJsonable::saveFieldIf(const char* key, const T& value, bool condition) {
-    if (condition) {
-        if constexpr (std::is_same_v<T, std::string>) {
-            setString(key, value);
-        } else if constexpr (std::is_same_v<T, int>) {
-            setInt64(key, static_cast<int64_t>(value));
-        } else if constexpr (std::is_same_v<T, int64_t>) {
-            setInt64(key, value);
-        } else if constexpr (std::is_same_v<T, double>) {
-            setDouble(key, value);
-        } else if constexpr (std::is_same_v<T, bool>) {
-            setBool(key, value);
-        } else {
-            static_assert(std::is_same_v<T, void>, "Unsupported type for saveFieldIf");
-        }
-    }
-}
-
-template<typename T>
-void ToJsonable::saveFieldIf(const char* key, const T& value, std::function<bool(const T&)> predicate) {
-    if (predicate && predicate(value)) {
-        saveFieldIf(key, value, true);
-    }
-}
-
-template<typename T>
-void ToJsonable::saveArrayField(const char* key, const std::vector<T>& values, 
-                               std::function<bool(const T&)> filter) {
-    if (filter) {
-        std::vector<T> filteredValues;
-        for (const auto& value : values) {
-            if (filter(value)) {
-                filteredValues.push_back(value);
-            }
-        }
-        setArray(key, filteredValues);
-    } else {
-        setArray(key, values);
-    }
-}
 
 } // namespace json 
