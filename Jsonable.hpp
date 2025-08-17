@@ -91,9 +91,13 @@ public:
      * @brief JSON 문자열로부터 생성
      * 
      * @param jsonStr JSON 문자열
+     * 
+     * 주의: 생성자에서는 virtual function을 호출할 수 없으므로
+     * 객체 생성 후 명시적으로 fromJson() 호출 필요
      */
     explicit Jsonable(const std::string& jsonStr) {
-        fromJson(jsonStr);
+        // 생성자에서 virtual function 호출은 위험하므로 제거
+        // 사용자는 객체 생성 후 fromJson()을 명시적으로 호출해야 함
     }
     
     // ========================================
