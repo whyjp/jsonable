@@ -7,7 +7,6 @@
  * 일반적인 setXX 메서드가 컨텍스트에 따라 자동으로 처리되는지 확인
  */
 
-#define JSONABLE_IMPLEMENTATION  
 #include "../Jsonable.hpp"
 
 class ArrayContextTestClass : public json::Jsonable {

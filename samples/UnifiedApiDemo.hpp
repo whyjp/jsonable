@@ -7,7 +7,6 @@
  * pushXX는 선택적 편의 메서드
  */
 
-#define JSONABLE_IMPLEMENTATION
 #include "../Jsonable.hpp"
 
 class UnifiedApiDemo : public json::Jsonable {

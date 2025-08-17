@@ -6,7 +6,6 @@
  * 새로운 다중상속 구조를 사용한 기본적인 JSON 처리 예제
  */
 
-#define JSONABLE_IMPLEMENTATION
 #include "../Jsonable.hpp"
 
 #include <iostream>

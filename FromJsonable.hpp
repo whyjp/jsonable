@@ -18,9 +18,9 @@ namespace json {
  * - JSON → 객체 데이터 로딩
  * - 사용자 정의 loadFromJson() 인터페이스 제공
  * 
- * 상속: JsonableImpl (기본 JSON 조작 기능)
+ * 상속: JsonableBase (기본 JSON 조작 기능)
  */
-class FromJsonable : public virtual JsonableImpl {
+class FromJsonable : public virtual JsonableBase {
 protected:
     // 파생 클래스에서만 생성 가능
     FromJsonable() = default;
@@ -40,7 +40,13 @@ public:
      * 1. JSON 문자열 파싱하여 내부 document 설정
      * 2. loadFromJson() 호출하여 사용자가 데이터 로드
      */
-    virtual void fromJson(const std::string& jsonStr);
+    virtual void fromJson(const std::string& jsonStr) {
+        // JSON 문자열 파싱하여 내부 document 설정
+        parseFromString(jsonStr);
+        
+        // 사용자 정의 역직렬화 로직 호출
+        loadFromJson();
+    }
     
     /**
      * @brief 내부 JSON 객체에서 데이터 로드 (사용자 구현 필수)
@@ -65,7 +71,7 @@ public:
     // 편의 메서드들 (JsonableImpl에서 상속됨)
     // ========================================
     
-    // 이미 JsonableImpl에서 제공되므로 여기서는 주석으로만 명시
+    // 이미 JsonableBase에서 제공되므로 여기서는 주석으로만 명시
     // getString(key), getInt64(key), getArray<T>(key) 등
     // hasKey(key), isArray(key), isObject(key)
     // iterateArray(key, func), iterateObject(key, func)
@@ -104,7 +110,20 @@ public:
      * @param loader 로딩 함수
      * @return 로딩 성공 여부
      */
-    bool loadNestedObject(const char* key, std::function<void()> loader);
+    bool loadNestedObject(const char* key, std::function<void()> loader) {
+        if (!hasKey(key) || !isObject(key)) {
+            return false;
+        }
+        
+        try {
+            // 중첩 객체 처리를 위한 임시 구현
+            if (loader) loader();
+            return true;
+        } catch (const std::exception& e) {
+            onLoadFieldError(key, e.what());
+            return false;
+        }
+    }
 
 protected:
     /**
@@ -112,14 +131,14 @@ protected:
      * 
      * 파생 클래스에서 오버라이드하여 커스텀 오류 처리 가능
      */
-    virtual void onParseError(const std::string& error);
+    virtual void onParseError(const std::string& error) { (void)error; }
     
     /**
      * @brief 필드 로딩 실패 시 호출되는 가상 함수
      * 
      * 파생 클래스에서 오버라이드하여 커스텀 오류 처리 가능
      */
-    virtual void onLoadFieldError(const char* key, const std::string& error);
+    virtual void onLoadFieldError(const char* key, const std::string& error) { (void)key; (void)error; }
 };
 
 /**
@@ -143,7 +162,7 @@ bool FromJsonable::loadField(const char* key, T& target, std::function<bool(cons
         } else if constexpr (std::is_same_v<T, bool>) {
             target = getBool(key);
         } else {
-            static_assert(false, "Unsupported type for loadField");
+            static_assert(std::is_same_v<T, void>, "Unsupported type for loadField");
         }
         
         if (validator && !validator(target)) {

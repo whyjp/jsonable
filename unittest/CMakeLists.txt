@@ -65,7 +65,7 @@ add_executable(jsonable_unittest
 # 헤더 포함 디렉토리 설정
 target_include_directories(jsonable_unittest PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../third_party/rapidjson/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../rapidjson/include
 )
 
 # GoogleTest 포함 경로 추가

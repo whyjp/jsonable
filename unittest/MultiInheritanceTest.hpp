@@ -6,7 +6,6 @@
  * 새로운 다중상속 구조 (JsonableBase ← ToJsonable + FromJsonable ← Jsonable)를 테스트
  */
 
-#define JSONABLE_IMPLEMENTATION
 #include "../Jsonable.hpp"
 
 #include <gtest/gtest.h>
@@ -28,6 +27,9 @@ public:
     TestPerson() : age_(0), active_(false) {}
     TestPerson(const std::string& name, int age, bool active = true)
         : name_(name), age_(age), active_(active) {}
+    
+    // Jsonable의 JSON 문자열 생성자 상속
+    using Jsonable::Jsonable;
 
     // FromJsonable 구현
     void loadFromJson() override {

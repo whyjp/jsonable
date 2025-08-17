@@ -18,9 +18,9 @@ namespace json {
  * - 사용자 정의 saveToJson() 인터페이스 제공
  * - Begin/End 스타일 JSON 생성 관리
  * 
- * 상속: JsonableImpl (기본 JSON 조작 기능)
+ * 상속: JsonableBase (기본 JSON 조작 기능)
  */
-class ToJsonable : public virtual JsonableImpl {
+class ToJsonable : public virtual JsonableBase {
 protected:
     // 파생 클래스에서만 생성 가능
     ToJsonable() = default;
@@ -40,7 +40,13 @@ public:
      * 1. saveToJson() 호출하여 사용자가 데이터 저장
      * 2. 내부 document를 JSON 문자열로 변환
      */
-    virtual std::string toJson() const;
+    virtual std::string toJson() const {
+        // 사용자 정의 직렬화 로직 호출
+        const_cast<ToJsonable*>(this)->saveToJson();
+        
+        // 내부 document를 JSON 문자열로 변환
+        return documentToString();
+    }
     
     /**
      * @brief 데이터를 내부 JSON 객체로 저장 (사용자 구현 필수)
@@ -86,7 +92,7 @@ public:
     // 편의 메서드들 (JsonableImpl에서 상속됨)
     // ========================================
     
-    // 이미 JsonableImpl에서 제공되므로 여기서는 주석으로만 명시
+    // 이미 JsonableBase에서 제공되므로 여기서는 주석으로만 명시
     // setString(key, value), setInt64(key, value), setArray<T>(key, values) 등
     // beginObject(key), endObject(), beginArray(key), endArray()
     // pushString(value), pushInt64(value) 등
@@ -133,7 +139,11 @@ public:
      * @param key 객체 필드명
      * @param saver 저장 함수
      */
-    void saveNestedObject(const char* key, std::function<void()> saver);
+    void saveNestedObject(const char* key, std::function<void()> saver) {
+        beginObject(key);
+        if (saver) saver();
+        endObject();
+    }
     
     /**
      * @brief 중첩 배열 저장 헬퍼
@@ -141,7 +151,11 @@ public:
      * @param key 배열 필드명
      * @param saver 저장 함수
      */
-    void saveNestedArray(const char* key, std::function<void()> saver);
+    void saveNestedArray(const char* key, std::function<void()> saver) {
+        beginArray(key);
+        if (saver) saver();
+        endArray();
+    }
 
 protected:
     /**
@@ -149,21 +163,21 @@ protected:
      * 
      * 파생 클래스에서 오버라이드하여 전처리 로직 추가 가능
      */
-    virtual void onBeforeSerialize();
+    virtual void onBeforeSerialize() {}
     
     /**
      * @brief JSON 직렬화 후 호출되는 가상 함수
      * 
      * 파생 클래스에서 오버라이드하여 후처리 로직 추가 가능
      */
-    virtual void onAfterSerialize();
+    virtual void onAfterSerialize() {}
     
     /**
      * @brief 직렬화 오류 시 호출되는 가상 함수
      * 
      * 파생 클래스에서 오버라이드하여 커스텀 오류 처리 가능
      */
-    virtual void onSerializeError(const std::string& error);
+    virtual void onSerializeError(const std::string& error) { (void)error; }
 };
 
 /**
@@ -183,7 +197,7 @@ void ToJsonable::saveFieldIf(const char* key, const T& value, bool condition) {
         } else if constexpr (std::is_same_v<T, bool>) {
             setBool(key, value);
         } else {
-            static_assert(false, "Unsupported type for saveFieldIf");
+            static_assert(std::is_same_v<T, void>, "Unsupported type for saveFieldIf");
         }
     }
 }

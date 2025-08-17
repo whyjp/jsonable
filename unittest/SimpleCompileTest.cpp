@@ -4,7 +4,6 @@
  * 새로운 다중상속 구조가 올바르게 컴파일되는지 확인
  */
 
-#define JSONABLE_IMPLEMENTATION
 #include "../Jsonable.hpp"
 
 #include <iostream>

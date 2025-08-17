@@ -29,20 +29,7 @@ struct is_jsonable : std::is_base_of<Jsonable, T> {};
 template<typename T>
 constexpr bool is_jsonable_v = is_jsonable<T>::value;
 
-/**
- * @brief JSON 기본 타입 체크 (타입 안전성)
- */
-template<typename T>
-constexpr bool is_json_primitive_v = std::disjunction_v<
-    std::is_same<T, std::string>,
-    std::is_same<T, int>,
-    std::is_same<T, int64_t>,
-    std::is_same<T, double>,
-    std::is_same<T, float>,
-    std::is_same<T, bool>,
-    std::is_same<T, uint32_t>,
-    std::is_same<T, uint64_t>
->;
+// is_json_primitive_v는 JsonableBase.hpp에서 정의됨
 
 /**
  * @brief 최종 사용자 인터페이스 - 완전한 JSON 처리
@@ -268,7 +255,4 @@ public:
 
 } // namespace json
 
-// 구현부는 조건부 포함
-#ifdef JSONABLE_IMPLEMENTATION
-#include "JsonableImpl.inl"
-#endif 
+// 모든 구현이 inline으로 포함되어 있어 별도 구현부 불필요 

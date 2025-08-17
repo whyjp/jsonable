@@ -6,7 +6,6 @@
  * 배열 컨텍스트에서 다양한 key 값 처리 테스트
  */
 
-#define JSONABLE_IMPLEMENTATION
 #include "../Jsonable.hpp"
 
 class NullKeyHandlingDemo : public json::Jsonable {

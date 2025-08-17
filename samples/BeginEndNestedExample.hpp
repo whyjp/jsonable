@@ -6,7 +6,6 @@
  * nested XXX 인터페이스 없이도 복잡한 중첩 구조를 쉽게 처리
  */
 
-#define JSONABLE_IMPLEMENTATION
 #include "../Jsonable.hpp"
 
 class NestedStructureExample : public json::Jsonable {

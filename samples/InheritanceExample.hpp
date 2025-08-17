@@ -10,7 +10,6 @@
  * JsonableImpl ← ToJsonable   ← 
  */
 
-#define JSONABLE_IMPLEMENTATION
 #include "../Jsonable.hpp"
 
 /**
