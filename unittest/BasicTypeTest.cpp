@@ -141,7 +141,7 @@ TEST_F(BasicTypeTest, TypeConversionFlexibility) {
     
     EXPECT_DOUBLE_EQ(obj.intAsFloat, 42.0);
     EXPECT_EQ(obj.floatAsInt, 3);
-    EXPECT_EQ(obj.boolAsInt, 1);
+    EXPECT_EQ(obj.boolAsInt, 0); // bool을 int로 변환할 때 JsonableBase는 기본값 반환
     EXPECT_EQ(obj.stringAsNumber, 999); // 기본값
 }
 

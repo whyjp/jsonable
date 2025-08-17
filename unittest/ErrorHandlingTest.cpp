@@ -98,9 +98,26 @@ TEST_F(ErrorHandlingTest, MissingFieldHandlingTest) {
         TestClass obj;
         obj.fromJson(testCase.first);
         
-        // 기본값이 제대로 설정되었는지 확인
-        if (obj.name == "Unknown") {
-            EXPECT_EQ(obj.age, 25);  // 기본값들이 설정되었어야 함
+        // 각 케이스별로 적절한 검증
+        if (testCase.second == "Complete missing") {
+            // 완전히 비어있는 경우: 모든 값이 기본값이어야 함
+            EXPECT_EQ(obj.name, "Unknown");
+            EXPECT_EQ(obj.age, 25);
+            EXPECT_TRUE(obj.active);
+        } else if (testCase.second == "Partial missing") {
+            // name만 설정된 경우: name은 "John", 나머지는 기본값
+            EXPECT_EQ(obj.name, "John");
+            EXPECT_EQ(obj.age, 25);
+            EXPECT_TRUE(obj.active);
+        } else if (testCase.second == "Name missing") {
+            // age, active만 설정된 경우: name은 기본값, age와 active는 설정값
+            EXPECT_EQ(obj.name, "Unknown");
+            EXPECT_EQ(obj.age, 30);
+            EXPECT_FALSE(obj.active);
+        } else if (testCase.second == "Active missing") {
+            // name, age만 설정된 경우: name과 age는 설정값, active는 기본값
+            EXPECT_EQ(obj.name, "Jane");
+            EXPECT_EQ(obj.age, 28);
             EXPECT_TRUE(obj.active);
         }
         
