@@ -58,8 +58,8 @@ find_package(Threads REQUIRED)
 
 # 테스트 실행 파일 생성
 add_executable(jsonable_unittest
-    JsonableTest.cpp
-    # TestJsonable.hpp는 헤더 전용이므로 소스에 포함하지 않음
+    JsonableNewTest.cpp
+    # MultiInheritanceTest.hpp는 헤더 전용이므로 소스에 포함하지 않음
 )
 
 # 헤더 포함 디렉토리 설정
