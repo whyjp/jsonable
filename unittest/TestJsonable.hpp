@@ -420,28 +420,37 @@ public:
             throw std::runtime_error("Expected JSON object for SimpleProduct");
         }
 
-        JSON_FIELD_STRING(value, name_, "name");
-        if (value.HasMember("id") && value["id"].IsInt()) {
-            id_ = value["id"].GetInt();
-        }
-        JSON_FIELD_DOUBLE(value, price_, "price");
-        JSON_FIELD_BOOL(value, available_, "available");
+        name_ = json::Jsonable::getString(value, "name", "");
+        id_ = static_cast<int>(json::Jsonable::getInt64(value, "id", 0));
+        price_ = json::Jsonable::getDouble(value, "price", 0.0);
+        available_ = json::Jsonable::getBool(value, "available", false);
     }
 
     rapidjson::Value toValue(rapidjson::Document::AllocatorType& allocator) const override {
         rapidjson::Value product(rapidjson::kObjectType);
         
-        JSON_SET_STRING(product, "name", name_, allocator);
-        JSON_SET_PRIMITIVE(product, "id", id_, allocator);
-        JSON_SET_PRIMITIVE(product, "price", price_, allocator);
-        JSON_SET_PRIMITIVE(product, "available", available_, allocator);
+        product.AddMember("name", rapidjson::Value(name_.c_str(), allocator), allocator);
+        product.AddMember("id", rapidjson::Value(id_), allocator);
+        product.AddMember("price", rapidjson::Value(price_), allocator);
+        product.AddMember("available", rapidjson::Value(available_), allocator);
         
         return product;
     }
 
 public:
-    // 기본 구현은 매크로로
-    JSONABLE_IMPL()
+    // 기본 구현 - 순수 함수 기반
+    void fromJson(const std::string& jsonStr) override {
+        auto doc = json::Jsonable::parseJson(jsonStr);
+        fromDocument(doc);
+    }
+    
+    std::string toJson() const override {
+        rapidjson::Document doc;
+        doc.SetObject();
+        auto value = toValue(doc.GetAllocator());
+        doc.CopyFrom(value, doc.GetAllocator());
+        return json::Jsonable::valueToString(doc);
+    }
 
     // 비교 연산자
     bool operator==(const SimpleProduct& other) const {
