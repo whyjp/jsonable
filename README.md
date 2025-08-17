@@ -84,18 +84,94 @@ company.fromJson(complexJsonString);
 std::string serialized = company.toJson();
 ```
 
-## 📖 지원 데이터 타입
+## 📖 JSON ↔ C++ 타입 매핑 표준
 
-| 타입 | 지원 여부 | 설명 |
-|------|---------|------|
-| `std::string` | ✅ | 문자열 |
-| `int64_t` | ✅ | 정수 (JSON 표준) |
-| `uint32_t`, `uint64_t` | ✅ | 부호 없는 정수 |
-| `float`, `double` | ✅ | 부동소수점 |
-| `bool` | ✅ | 불린 |
-| `std::vector<T>` | ✅ | 배열 |
-| `std::optional<T>` | ✅ | 선택적 필드 |
-| 중첩 객체 | ✅ | Jsonable 상속 클래스 |
+### ✅ **권장 타입 매핑** (크로스 플랫폼 호환성)
+
+| JSON 타입 | C++ 타입 | 이유 | 예시 |
+|-----------|----------|------|------|
+| `string` | `std::string` | **필수**, UTF-8 지원 | `"Hello"` → `std::string` |
+| `number` | `int64_t` | **권장**, JSON 표준 범위 | `123` → `int64_t` |
+| `number` | `double` | **권장**, IEEE 754 호환 | `3.14` → `double` |
+| `boolean` | `bool` | **필수**, 표준 불린 | `true` → `bool` |
+| `array` | `std::vector<T>` | **권장**, 동적 크기 | `[1,2,3]` → `std::vector<int64_t>` |
+| `null` | `std::optional<T>` | **권장**, null 안전성 | `null` → `std::optional<T>{}` |
+| `object` | `Jsonable 상속` | **권장**, 중첩 구조 | `{"x":1}` → Custom Class |
+
+### ⚠️ **주의해서 사용할 타입들** (범위/정밀도 제한)
+
+| JSON 타입 | C++ 타입 | 주의사항 | 대안 |
+|-----------|----------|----------|------|
+| `number` | `uint32_t` | 음수 처리 불가, 32비트 제한 | `int64_t` 사용 권장 |
+| `number` | `uint64_t` | 음수 처리 불가 | `int64_t` 사용 권장 |
+| `number` | `float` | 정밀도 손실 가능 | `double` 사용 권장 |
+| `number` | `int32_t` | 범위 제한 (32비트) | `int64_t` 사용 권장 |
+
+### ❌ **사용하지 말아야 할 타입들** (호환성 문제)
+
+| C++ 타입 | 문제점 | 권장 대안 |
+|----------|--------|-----------|
+| `short`, `char` | 범위 너무 작음 (16비트/8비트) | `int64_t` |
+| `long long` | 플랫폼 의존적 크기 | `int64_t` |
+| `size_t`, `ptrdiff_t` | 플랫폼별 크기 차이 | `int64_t` |
+| `wchar_t` | 플랫폼별 구현 차이 | `std::string` (UTF-8) |
+
+### 💡 **매핑 예시 코드**
+
+```cpp
+class DataModel : public json::Jsonable {
+private:
+    // ✅ 권장하는 안전한 타입들
+    std::string name_;                    // JSON string
+    int64_t id_;                         // JSON number (정수)
+    double price_;                       // JSON number (소수)
+    bool active_;                        // JSON boolean
+    std::vector<std::string> tags_;      // JSON array
+    std::optional<std::string> note_;    // JSON null 허용
+
+public:
+    JSONABLE_IMPL()
+    
+    void fromDocument(const rapidjson::Value& value) override {
+        JSON_FIELD_STRING(value, name_, "name");     // 문자열 매핑
+        JSON_FIELD_INT64(value, id_, "id");          // 정수 매핑  
+        JSON_FIELD_DOUBLE(value, price_, "price");   // 실수 매핑
+        JSON_FIELD_BOOL(value, active_, "active");   // 불린 매핑
+        
+        // 배열 매핑
+        tags_.clear();
+        if (isArray(value, "tags")) {
+            const auto& arr = value["tags"];
+            for (const auto& item : arr.GetArray()) {
+                if (item.IsString()) {
+                    tags_.push_back(item.GetString());
+                }
+            }
+        }
+        
+        // 선택적 필드 매핑 (null 안전)
+        note_ = getOptionalString(value, "note");
+    }
+    
+    rapidjson::Value toValue(rapidjson::Document::AllocatorType& allocator) const override {
+        rapidjson::Value obj(rapidjson::kObjectType);
+        JSON_SET_STRING(obj, "name", name_, allocator);
+        JSON_SET_PRIMITIVE(obj, "id", id_, allocator);
+        JSON_SET_PRIMITIVE(obj, "price", price_, allocator);
+        JSON_SET_PRIMITIVE(obj, "active", active_, allocator);
+        // ... 배열 및 선택적 필드 설정
+        return obj;
+    }
+};
+```
+
+### 🎯 **타입 선택 가이드라인**
+
+1. **기본 원칙**: JSON 표준을 벗어나지 않는 타입 선택
+2. **호환성 우선**: 플랫폼 독립적인 고정 크기 타입 사용
+3. **안전성 중시**: null 허용 필드는 `std::optional<T>` 사용
+4. **성능 고려**: 불필요한 타입 변환 최소화
+5. **유지보수성**: 명확하고 예측 가능한 타입 매핑
 
 ## 🛠️ 고급 기능
 
