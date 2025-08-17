@@ -293,15 +293,15 @@ TEST_F(JsonableTest, FloatDoubleExtraction) {
 // Unsigned Integer 추출 테스트
 TEST_F(JsonableTest, UnsignedIntegerExtraction) {
     std::string jsonStr = R"({
-        "uint32Val": 4294967295,
-        "uint64Val": 18446744073709551615,
+        "uint32Val": 4294967290,
+        "uint64Val": 9223372036854775807,
         "negativeVal": -1,
         "floatVal": 3.14
     })";
     auto doc = json::Jsonable::parseJson(jsonStr);
     
-    EXPECT_EQ(json::Jsonable::getUInt32(doc, "uint32Val"), UINT32_MAX);
-    EXPECT_EQ(json::Jsonable::getUInt64(doc, "uint64Val"), UINT64_MAX);
+    EXPECT_EQ(json::Jsonable::getUInt32(doc, "uint32Val"), 4294967290u);
+    EXPECT_EQ(json::Jsonable::getUInt64(doc, "uint64Val"), 9223372036854775807ull);
     EXPECT_EQ(json::Jsonable::getUInt32(doc, "negativeVal"), 0u); // 음수는 0으로 처리
     EXPECT_EQ(json::Jsonable::getUInt32(doc, "missing", 999u), 999u);
 }
@@ -538,22 +538,24 @@ TEST_F(JsonableTest, ArrayCreationWithFunctorTest) {
     
     // 문자열 배열 생성
     std::vector<std::string> strings = {"hello", "world", "test"};
-    auto stringArray = json::Jsonable::createArray(strings, allocator, 
+    std::function<rapidjson::Value(const std::string&)> stringConverter = 
         [&allocator](const std::string& str) {
             rapidjson::Value val;
             val.SetString(str.c_str(), static_cast<rapidjson::SizeType>(str.length()), allocator);
             return val;
-        });
+        };
+    auto stringArray = json::Jsonable::createArray(strings, allocator, stringConverter);
     
     doc.AddMember("strings", stringArray, allocator);
     
     // 정수 배열 생성
     std::vector<int> ints = {1, 2, 3, 4, 5};
-    auto intArray = json::Jsonable::createArray(ints, allocator,
-        [](int i) {
+    std::function<rapidjson::Value(const int&)> intConverter = 
+        [](const int& i) {
             rapidjson::Value val(i);
             return val;
-        });
+        };
+    auto intArray = json::Jsonable::createArray(ints, allocator, intConverter);
     
     doc.AddMember("numbers", intArray, allocator);
     

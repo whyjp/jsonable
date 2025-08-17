@@ -421,7 +421,9 @@ public:
         }
 
         JSON_FIELD_STRING(value, name_, "name");
-        JSON_FIELD_INT64(value, id_, "id");
+        if (value.HasMember("id") && value["id"].IsInt()) {
+            id_ = value["id"].GetInt();
+        }
         JSON_FIELD_DOUBLE(value, price_, "price");
         JSON_FIELD_BOOL(value, available_, "available");
     }
@@ -437,6 +439,7 @@ public:
         return product;
     }
 
+public:
     // 기본 구현은 매크로로
     JSONABLE_IMPL()
 

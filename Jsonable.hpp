@@ -160,9 +160,23 @@ public:
     static uint32_t getUInt32(const rapidjson::Value& obj, const char* key, 
                              uint32_t defaultValue = 0) {
         if (obj.HasMember(key) && obj[key].IsNumber()) {
-            int64_t value = obj[key].GetInt64();
-            if (value >= 0 && value <= UINT32_MAX) {
-                return static_cast<uint32_t>(value);
+            if (obj[key].IsUint()) {
+                return obj[key].GetUint();
+            } else if (obj[key].IsInt()) {
+                int value = obj[key].GetInt();
+                if (value >= 0) {
+                    return static_cast<uint32_t>(value);
+                }
+            } else if (obj[key].IsInt64()) {
+                int64_t value = obj[key].GetInt64();
+                if (value >= 0 && value <= UINT32_MAX) {
+                    return static_cast<uint32_t>(value);
+                }
+            } else if (obj[key].IsUint64()) {
+                uint64_t value = obj[key].GetUint64();
+                if (value <= UINT32_MAX) {
+                    return static_cast<uint32_t>(value);
+                }
             }
         }
         return defaultValue;
@@ -174,9 +188,20 @@ public:
     static uint64_t getUInt64(const rapidjson::Value& obj, const char* key, 
                              uint64_t defaultValue = 0) {
         if (obj.HasMember(key) && obj[key].IsNumber()) {
-            int64_t value = obj[key].GetInt64();
-            if (value >= 0) {
-                return static_cast<uint64_t>(value);
+            if (obj[key].IsUint64()) {
+                return obj[key].GetUint64();
+            } else if (obj[key].IsInt64()) {
+                int64_t value = obj[key].GetInt64();
+                if (value >= 0) {
+                    return static_cast<uint64_t>(value);
+                }
+            } else if (obj[key].IsUint()) {
+                return static_cast<uint64_t>(obj[key].GetUint());
+            } else if (obj[key].IsInt()) {
+                int value = obj[key].GetInt();
+                if (value >= 0) {
+                    return static_cast<uint64_t>(value);
+                }
             }
         }
         return defaultValue;
@@ -525,4 +550,92 @@ public:
     }
 };
 
-} // namespace json 
+} // namespace json
+
+// ========================================
+// 편의성 매크로 정의
+// ========================================
+
+/**
+ * @brief Jsonable 인터페이스의 기본 구현을 제공하는 매크로
+ */
+#define JSONABLE_IMPL() \
+    void fromJson(const std::string& jsonStr) override { \
+        auto doc = json::Jsonable::parseJson(jsonStr); \
+        fromDocument(doc); \
+    } \
+    std::string toJson() const override { \
+        rapidjson::Document doc; \
+        doc.SetObject(); \
+        auto value = toValue(doc.GetAllocator()); \
+        doc.CopyFrom(value, doc.GetAllocator()); \
+        return json::Jsonable::valueToString(doc); \
+    }
+
+/**
+ * @brief JSON 필드에서 문자열 값을 읽는 매크로
+ * @param jsonValue JSON 객체
+ * @param field 대상 필드 변수
+ * @param key JSON 키 이름
+ */
+#define JSON_FIELD_STRING(jsonValue, field, key) \
+    if ((jsonValue).HasMember(key) && (jsonValue)[key].IsString()) { \
+        (field) = (jsonValue)[key].GetString(); \
+    }
+
+/**
+ * @brief JSON 필드에서 정수 값을 읽는 매크로
+ * @param jsonValue JSON 객체
+ * @param field 대상 필드 변수
+ * @param key JSON 키 이름
+ */
+#define JSON_FIELD_INT64(jsonValue, field, key) \
+    if ((jsonValue).HasMember(key) && (jsonValue)[key].IsInt64()) { \
+        (field) = (jsonValue)[key].GetInt64(); \
+    }
+
+/**
+ * @brief JSON 필드에서 부동소수점 값을 읽는 매크로
+ * @param jsonValue JSON 객체
+ * @param field 대상 필드 변수
+ * @param key JSON 키 이름
+ */
+#define JSON_FIELD_DOUBLE(jsonValue, field, key) \
+    if ((jsonValue).HasMember(key) && (jsonValue)[key].IsDouble()) { \
+        (field) = (jsonValue)[key].GetDouble(); \
+    }
+
+/**
+ * @brief JSON 필드에서 불린 값을 읽는 매크로
+ * @param jsonValue JSON 객체
+ * @param field 대상 필드 변수
+ * @param key JSON 키 이름
+ */
+#define JSON_FIELD_BOOL(jsonValue, field, key) \
+    if ((jsonValue).HasMember(key) && (jsonValue)[key].IsBool()) { \
+        (field) = (jsonValue)[key].GetBool(); \
+    }
+
+/**
+ * @brief JSON 객체에 문자열 값을 설정하는 매크로
+ * @param jsonObj JSON 객체
+ * @param key JSON 키 이름
+ * @param value 설정할 값
+ * @param allocator JSON 할당자
+ */
+#define JSON_SET_STRING(jsonObj, key, value, allocator) \
+    (jsonObj).AddMember(rapidjson::Value(key, (allocator)).Move(), \
+                       rapidjson::Value((value).c_str(), (allocator)).Move(), \
+                       (allocator))
+
+/**
+ * @brief JSON 객체에 기본 타입 값을 설정하는 매크로
+ * @param jsonObj JSON 객체
+ * @param key JSON 키 이름
+ * @param value 설정할 값
+ * @param allocator JSON 할당자
+ */
+#define JSON_SET_PRIMITIVE(jsonObj, key, value, allocator) \
+    (jsonObj).AddMember(rapidjson::Value(key, (allocator)).Move(), \
+                       rapidjson::Value(value).Move(), \
+                       (allocator)) 

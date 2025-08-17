@@ -19,6 +19,9 @@ if(WIN32)
     # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
+# FetchContent 모듈 포함
+include(FetchContent)
+
 # GoogleTest 찾기 (vcpkg 또는 수동 설치)
 find_package(GTest CONFIG QUIET)
 
@@ -27,29 +30,26 @@ if(NOT GTest_FOUND)
     find_package(GTest MODULE QUIET)
     
     if(NOT GTest_FOUND)
-        message(STATUS "GTest를 find_package로 찾을 수 없습니다. 수동 경로를 시도합니다...")
+        message(STATUS "GTest를 find_package로 찾을 수 없습니다. FetchContent로 다운로드합니다...")
         
-        # vcpkg 설치 경로 시도
-        if(EXISTS "${CMAKE_TOOLCHAIN_FILE}")
-            message(STATUS "vcpkg toolchain 발견. vcpkg를 통한 GTest 설치를 권장합니다.")
-            message(STATUS "명령어: vcpkg install gtest:x64-windows")
-        endif()
+        # GoogleTest를 FetchContent로 다운로드
+        FetchContent_Declare(
+            googletest
+            GIT_REPOSITORY https://github.com/google/googletest.git
+            GIT_TAG        release-1.12.1
+        )
         
-        # 수동 GoogleTest 경로 설정 (사용자가 직접 빌드한 경우)
-        set(GTEST_ROOT "C:/googletest" CACHE PATH "GoogleTest 설치 경로")
-        set(GTEST_INCLUDE_DIRS "${GTEST_ROOT}/include" CACHE PATH "GoogleTest 헤더 경로")
-        set(GTEST_LIBRARIES "${GTEST_ROOT}/lib/gtest.lib" CACHE FILEPATH "GoogleTest 라이브러리")
-        set(GTEST_MAIN_LIBRARIES "${GTEST_ROOT}/lib/gtest_main.lib" CACHE FILEPATH "GoogleTest Main 라이브러리")
+        # For Windows: Prevent overriding the parent project's compiler/linker settings
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
         
-        if(EXISTS "${GTEST_INCLUDE_DIRS}/gtest/gtest.h")
-            message(STATUS "수동 GoogleTest 경로에서 발견: ${GTEST_ROOT}")
-            set(GTest_FOUND TRUE)
-        else()
-            message(FATAL_ERROR "GoogleTest를 찾을 수 없습니다. 다음 중 하나를 시도해주세요:\n"
-                               "1. vcpkg install gtest:x64-windows\n"
-                               "2. GoogleTest를 수동으로 빌드하고 GTEST_ROOT 설정\n"
-                               "3. Visual Studio Installer에서 'CMake용 C++ 도구' 설치")
-        endif()
+        FetchContent_MakeAvailable(googletest)
+        
+        # FetchContent로 가져온 경우 타겟 별칭 설정
+        add_library(GTest::GTest ALIAS gtest)
+        add_library(GTest::Main ALIAS gtest_main)
+        
+        message(STATUS "GoogleTest가 FetchContent로 성공적으로 다운로드되었습니다.")
+        set(GTest_FOUND TRUE)
     endif()
 endif()
 
@@ -74,6 +74,13 @@ if(TARGET GTest::gtest)
     target_link_libraries(jsonable_unittest 
         GTest::gtest 
         GTest::gtest_main
+        Threads::Threads
+    )
+elseif(TARGET GTest::GTest)
+    # FetchContent 별칭 사용
+    target_link_libraries(jsonable_unittest 
+        GTest::GTest 
+        GTest::Main
         Threads::Threads
     )
 else()
