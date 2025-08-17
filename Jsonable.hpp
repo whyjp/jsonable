@@ -152,80 +152,8 @@ public:
      */
     bool operator!=(const Jsonable& other) const {
         return toJson() != other.toJson();
-    }
-    
-    // ========================================
-    // 모든 기능 접근 (다중상속으로 자동 제공)
-    // ========================================
-    
-    // FromJsonable에서 상속받은 기능들:
-    // - fromJson(jsonStr)
-    // - loadFromJson() 순수 가상 함수
-    
-    // ToJsonable에서 상속받은 기능들:
-    // - toJson()
-    // - saveToJson() 순수 가상 함수
-    
-    // JsonableBase에서 상속받은 기능들:
-    // - getString(), setString() 등 모든 기본 타입 처리
-    // - getArray<T>(), setArray<T>() 등 배열 처리  
-    // - beginObject(), endObject() 등 Begin/End 스타일
-    // - pushString(), pushInt64() 등 배열 요소 추가
-    // - hasKey(), isArray(), isObject() 등 상태 확인
-    // - iterateArray(), iterateObject() 등 순회 기능
+    }    
 };
 
-/**
- * 🎯 사용 예시:
- * 
- * @code
- * class Person : public json::Jsonable {
- * private:
- *     std::string name_;
- *     int age_;
- *     std::vector<std::string> hobbies_;
- * 
- * public:
- *     // FromJsonable에서 상속받은 순수 가상 함수
- *     void loadFromJson() override {
- *         name_ = getString("name");
- *         age_ = static_cast<int>(getInt64("age"));
- *         hobbies_ = getArray<std::string>("hobbies");
- *     }
- * 
- *     // ToJsonable에서 상속받은 순수 가상 함수
- *     void saveToJson() override {
- *         setString("name", name_);
- *         setInt64("age", static_cast<int64_t>(age_));
- *         setArray("hobbies", hobbies_);
- *     }
- * 
- *     // 또는 Begin/End 스타일
- *     void saveToJson() override {
- *         beginObject();
- *         {
- *             setString("name", name_);
- *             setInt64("age", static_cast<int64_t>(age_));
- *             
- *             beginArray("hobbies");
- *             {
- *                 for (const auto& hobby : hobbies_) {
- *                     setString("", hobby);
- *                 }
- *             }
- *             endArray();
- *         }
- *         endObject();
- *     }
- * };
- * 
- * // 사용법
- * Person person;
- * person.fromJson(R"({"name":"Alice","age":25,"hobbies":["reading","coding"]})");
- * std::string json = person.toJson();
- * @endcode
- */
 
 } // namespace json
-
-// 모든 구현이 inline으로 포함되어 있어 별도 구현부 불필요 
