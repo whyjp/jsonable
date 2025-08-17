@@ -201,8 +201,8 @@ TEST_F(MultiInheritanceTest, ObjectEquality) {
     TestPerson person2("Charlie", 35, true);
     person2.addTag("architect");
 
-    // equals 메서드 테스트
-    EXPECT_TRUE(person1.equals(person2));
+    // equals 연산자 테스트
+    EXPECT_TRUE(person1 == person2);
     
     // 연산자 오버로딩 테스트
     EXPECT_TRUE(person1 == person2);
@@ -210,7 +210,7 @@ TEST_F(MultiInheritanceTest, ObjectEquality) {
 
     // 데이터 변경 후 테스트
     person2.setAge(36);
-    EXPECT_FALSE(person1.equals(person2));
+    EXPECT_FALSE(person1 == person2);
     EXPECT_FALSE(person1 == person2);
     EXPECT_TRUE(person1 != person2);
 }
@@ -408,14 +408,14 @@ TEST_F(MultiInheritanceTest, ConvenienceMethods) {
     TestPerson person("ConvenienceTest", 42, true);
     person.addTag("test");
     
-    // toString 메서드 테스트
-    std::string jsonStr1 = person.toString();
+    // toJson 메서드 테스트
+    std::string jsonStr1 = person.toJson();
     std::string jsonStr2 = person.toJson();
     EXPECT_EQ(jsonStr1, jsonStr2);
     
-    // fromString 메서드 테스트
+    // fromJson 메서드 테스트
     TestPerson restored;
-    restored.fromString(jsonStr1);
+    restored.fromJson(jsonStr1);
     
     EXPECT_EQ(restored.getName(), "ConvenienceTest");
     EXPECT_EQ(restored.getAge(), 42);
