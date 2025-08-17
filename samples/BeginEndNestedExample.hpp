@@ -86,21 +86,14 @@ public:
         
         departments_.clear();
         
-        // 🎯 Begin/End 구조 없이는 이런 식으로 읽어야 함
-        // 하지만 읽기는 기존 방식이 더 편할 수 있음
+        // 🎯 복잡한 중첩 구조 읽기는 Begin/End 방식보다는
+        // 직접 배열 처리나 반복문이 더 적합할 수 있음
         if (hasKey("departments") && isArray("departments")) {
-            iterateArray("departments", [this](size_t deptIndex) {
-                Department dept;
-                
-                // 부서 이름과 멤버들은 기존 방식으로
-                std::string deptKey = "departments/" + std::to_string(deptIndex);
-                // dept.name = getNestedString(deptKey + "/name");  // ❌ 제거된 nested API
-                
-                // 대신 임시 JSON 객체를 만들어서 처리하거나
-                // 또는 직접 RapidJSON 순회 (하지만 이는 내부 구현에서 처리)
-                
-                departments_.push_back(dept);
-            });
+            // 실제 구현에서는 중첩된 구조를 직접 파싱하거나
+            // 별도의 부분 파서를 사용하는 것이 일반적
+            // 
+            // 예: departments_ = getArray<Department>("departments"); 
+            // (단, Department이 Jsonable을 상속받은 경우)
         }
     }
 };
@@ -142,11 +135,11 @@ public:
  * 4. **유지보수**: 구조 변경이 쉬움
  * 5. **path 불필요**: "a/b/c" 같은 문자열 경로 불필요
  * 
- * ❌ nested XXX 인터페이스의 문제점:
+ * ✅ Begin/End 구조의 우수성:
  * 
- * 1. **문자열 경로**: "departments/0/budget/allocated" 같은 복잡한 문자열
- * 2. **런타임 오류**: 경로 오타 시 런타임에만 발견
- * 3. **타입 불안전**: 경로의 타입을 컴파일 타임에 알 수 없음
- * 4. **성능 오버헤드**: 매번 경로 파싱 필요
- * 5. **가독성 저하**: 복잡한 경로 문자열
+ * 1. **명확한 구조**: 코드 구조가 JSON 구조와 완벽 일치
+ * 2. **컴파일 타임 안전**: 구조 오류를 컴파일 시점에 발견
+ * 3. **높은 성능**: 함수 호출 오버헤드 없이 직접 처리
+ * 4. **우수한 가독성**: 중첩 레벨이 들여쓰기로 명확히 표현
+ * 5. **간단한 API**: 복잡한 경로 문자열이나 헬퍼 함수 불필요
  */ 

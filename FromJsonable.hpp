@@ -103,27 +103,6 @@ public:
     template<typename T>
     bool loadArrayField(const char* key, std::vector<T>& target, size_t maxSize = 0);
     
-    /**
-     * @brief 중첩 객체 로딩 헬퍼
-     * 
-     * @param key 객체 필드명
-     * @param loader 로딩 함수
-     * @return 로딩 성공 여부
-     */
-    bool loadNestedObject(const char* key, std::function<void()> loader) {
-        if (!hasKey(key) || !isObject(key)) {
-            return false;
-        }
-        
-        try {
-            // 중첩 객체 처리를 위한 임시 구현
-            if (loader) loader();
-            return true;
-        } catch (const std::exception& e) {
-            onLoadFieldError(key, e.what());
-            return false;
-        }
-    }
 
 protected:
     /**

@@ -157,13 +157,13 @@ class Person : public json::Jsonable {
     void saveToJson() override {
         beginObject();
         {
-            setCurrentString("name", name_);
-            setCurrentInt64("age", static_cast<int64_t>(age_));
+            setString("name", name_);
+            setInt64("age", static_cast<int64_t>(age_));
             
             beginArray("hobbies");
             {
                 for (const auto& hobby : hobbies_) {
-                    pushString(hobby);  // 타입 명확
+                    pushString(hobby);  // 배열 요소 추가, 타입 명확
                 }
             }
             endArray();

@@ -185,13 +185,11 @@ public:
     // - fromJson(jsonStr)
     // - loadField<T>(key, target, validator)
     // - loadArrayField<T>(key, target, maxSize)
-    // - loadNestedObject(key, loader)
     
     // ToJsonable에서 상속받은 기능들:
     // - toJson()
     // - saveFieldIf<T>(key, value, condition)
     // - saveArrayField<T>(key, values, filter)
-    // - saveNestedObject(key, saver)
     
     // JsonableBase에서 상속받은 기능들:
     // - getString(), setString() 등 모든 기본 타입 처리

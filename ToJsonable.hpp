@@ -133,29 +133,6 @@ public:
     void saveArrayField(const char* key, const std::vector<T>& values, 
                        std::function<bool(const T&)> filter = nullptr);
     
-    /**
-     * @brief 중첩 객체 저장 헬퍼
-     * 
-     * @param key 객체 필드명
-     * @param saver 저장 함수
-     */
-    void saveNestedObject(const char* key, std::function<void()> saver) {
-        beginObject(key);
-        if (saver) saver();
-        endObject();
-    }
-    
-    /**
-     * @brief 중첩 배열 저장 헬퍼
-     * 
-     * @param key 배열 필드명
-     * @param saver 저장 함수
-     */
-    void saveNestedArray(const char* key, std::function<void()> saver) {
-        beginArray(key);
-        if (saver) saver();
-        endArray();
-    }
 
 protected:
     /**

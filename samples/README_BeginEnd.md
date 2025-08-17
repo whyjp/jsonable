@@ -21,9 +21,9 @@ class Person : public json::Jsonable {
     void saveToJson() override {
         beginObject(); // 루트 객체 시작
         {
-            setCurrentString("name", name_);
-            setCurrentInt64("age", static_cast<int64_t>(age_));
-            setCurrentBool("active", active_);
+            setString("name", name_);
+            setInt64("age", static_cast<int64_t>(age_));
+            setBool("active", active_);
         }
         endObject(); // 루트 객체 종료
     }
@@ -45,12 +45,12 @@ class Person : public json::Jsonable {
 void saveToJson() override {
     beginObject();
     {
-        setCurrentString("title", title_);
+        setString("title", title_);
         
         beginArray("hobbies"); // 배열 시작
         {
             for (const auto& hobby : hobbies_) {
-                pushString(hobby);
+                pushString(hobby);  // 배열 요소 추가
             }
         }
         endArray(); // 배열 종료
@@ -73,21 +73,21 @@ void saveToJson() override {
 void saveToJson() override {
     beginObject(); // 루트 객체
     {
-        setCurrentString("company", name_);
+        setString("company", name_);
         
         // 직원 배열
         beginArray("employees");
         {
             for (const auto& employee : employees_) {
-                pushObject(); // 새 직원 객체 시작
+                beginObject(); // 새 직원 객체 시작
                 {
-                    setCurrentString("name", employee.getName());
-                    setCurrentInt64("age", static_cast<int64_t>(employee.getAge()));
+                    setString("name", employee.getName());
+                    setInt64("age", static_cast<int64_t>(employee.getAge()));
                     
                     beginArray("skills"); // 기술 배열
                     {
                         for (const auto& skill : employee.getSkills()) {
-                            pushString(skill);
+                            pushString(skill);  // 배열 요소 추가
                         }
                     }
                     endArray();
@@ -100,8 +100,8 @@ void saveToJson() override {
         // 메타데이터 객체
         beginObject("metadata");
         {
-            setCurrentInt64("employeeCount", static_cast<int64_t>(employees_.size()));
-            setCurrentString("lastUpdated", getCurrentTimestamp());
+            setInt64("employeeCount", static_cast<int64_t>(employees_.size()));
+            setString("lastUpdated", getCurrentTimestamp());
         }
         endObject();
     }
@@ -138,16 +138,16 @@ void saveToJson() override {
 void saveToJson() override {
     beginObject();
     {
-        setCurrentString("title", "매트릭스 데이터");
+        setString("title", "매트릭스 데이터");
         
         // 2차원 배열
         beginArray("matrix");
         {
             for (const auto& row : matrix_) {
-                pushArray(); // 새로운 행 배열 시작
+                beginArray(); // 새로운 행 배열 시작 (배열 내에서 key 없음)
                 {
                     for (int value : row) {
-                        pushInt64(static_cast<int64_t>(value));
+                        pushInt64(static_cast<int64_t>(value));  // 배열 요소 추가
                     }
                 }
                 endArray(); // 행 배열 종료
@@ -186,21 +186,26 @@ void saveToJson() override {
 
 | 메서드 | 설명 |
 |--------|------|
-| `setCurrentString(key, value)` | 현재 객체에 문자열 추가 |
-| `setCurrentInt64(key, value)` | 현재 객체에 정수 추가 |
-| `setCurrentDouble(key, value)` | 현재 객체에 실수 추가 |
-| `setCurrentBool(key, value)` | 현재 객체에 불린 추가 |
+| `setString(key, value)` | 현재 객체에 문자열 필드 추가 |
+| `setInt64(key, value)` | 현재 객체에 정수 필드 추가 |
+| `setDouble(key, value)` | 현재 객체에 실수 필드 추가 |
+| `setBool(key, value)` | 현재 객체에 불린 필드 추가 |
 
 ### 배열 내 값 추가
 
 | 메서드 | 설명 |
 |--------|------|
-| `pushString(value)` | 현재 배열에 문자열 추가 |
-| `pushInt64(value)` | 현재 배열에 정수 추가 |
-| `pushDouble(value)` | 현재 배열에 실수 추가 |
-| `pushBool(value)` | 현재 배열에 불린 추가 |
-| `pushObject()` | 현재 배열에 새 객체 추가 |
-| `pushArray()` | 현재 배열에 새 배열 추가 |
+| `pushString(value)` | 현재 배열에 문자열 요소 추가 |
+| `pushInt64(value)` | 현재 배열에 정수 요소 추가 |
+| `pushDouble(value)` | 현재 배열에 실수 요소 추가 |
+| `pushBool(value)` | 현재 배열에 불린 요소 추가 |
+
+### 중첩 구조 생성
+
+| 메서드 | 설명 |
+|--------|------|
+| `beginObject()` | 배열 내에 새 객체 시작 |
+| `beginArray()` | 배열 내에 새 배열 시작 |
 
 ## 🔄 기존 방식과 비교
 
@@ -218,13 +223,13 @@ void saveToJson() override {
 void saveToJson() override {
     beginObject();
     {
-        setCurrentString("name", name_);
-        setCurrentInt64("age", age_);
+        setString("name", name_);
+        setInt64("age", age_);
         
         beginArray("hobbies");
         {
             for (const auto& hobby : hobbies_) {
-                pushString(hobby);
+                pushString(hobby);  // 배열 요소 추가
             }
         }
         endArray();
@@ -262,11 +267,25 @@ class MyClass : public json::Jsonable {
     void saveToJson() override {
         beginObject();
         {
-            // 여기에 JSON 구조 정의
+            setString("field1", value1_);
+            setInt64("field2", value2_);
+            
+            beginArray("items");
+            {
+                for (const auto& item : items_) {
+                    pushString(item);  // 배열 요소 추가
+                }
+            }
+            endArray();
         }
         endObject();
     }
 };
 ```
 
-Begin/End 스타일로 더 직관적이고 안전한 JSON 처리를 경험해보세요! 🎉 
+**✨ 핵심 개선사항:**
+- 🚫 **복잡한 nested 헬퍼 제거**: `saveNestedObject()` 등 불필요한 함수 제거
+- ⚡ **성능 향상**: 함수 포인터 오버헤드 제거로 직접적인 처리
+- 📖 **단순화된 API**: 두 가지 명확한 방식만 제공 (직접 설정 vs Begin/End)
+
+Begin/End 스타일로 더 직관적이고 성능 좋은 JSON 처리를 경험해보세요! 🎉 

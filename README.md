@@ -32,8 +32,9 @@ FromJsonable   ToJsonable
 
 ### ✅ **통일된 API**
 - 🎯 **컨텍스트 자동 인식**: 배열/객체에서 동일한 `setXX` 메서드 사용
-- 🔄 **Begin/End 스타일**: 직관적인 중첩 구조 생성
+- 🔄 **Begin/End 스타일**: 직관적인 중첩 구조 생성 (함수 포인터 오버헤드 없음)
 - 🛡️ **Null 안전성**: `nullptr`, 빈 문자열 key 안전하게 처리
+- 🚫 **단순화된 API**: 불필요한 nested 헬퍼 함수 제거로 명확성 향상
 
 ## 🚀 빠른 시작
 
@@ -114,7 +115,7 @@ public:
             beginArray("departments");
             {
                 for (const auto& dept : departments_) {
-                    setString("", dept);  // 배열에서 key 무시됨
+                    pushString(dept);  // 배열 요소 추가
                 }
             }
             endArray();
@@ -131,7 +132,7 @@ public:
                         beginArray("hobbies");
                         {
                             for (const auto& hobby : emp.getHobbies()) {
-                                setString("", hobby);  // key 무시됨
+                                pushString(hobby);  // 배열 요소 추가
                             }
                         }
                         endArray();
@@ -201,6 +202,20 @@ class User : public json::Jsonable {
                       [](const std::string& perm) { 
                           return !perm.empty(); 
                       });
+        
+        // 복잡한 중첩 구조는 Begin/End 방식 사용 (권장)
+        beginObject("profile");
+        {
+            setString("bio", bio_);
+            beginArray("social_links");
+            {
+                for (const auto& link : social_links_) {
+                    pushString(link);  // 배열 요소 추가
+                }
+            }
+            endArray();
+        }
+        endObject();
     }
     
     void loadFromJson() override {
@@ -241,10 +256,24 @@ void loadFromJson() override {
 
 | 클래스 | 역할 | 제공 기능 |
 |--------|------|-----------|
-| `JsonableBase` | 기본 JSON 조작 | `getString()`, `setString()`, `beginObject()` 등 |
-| `FromJsonable` | 역직렬화 책임 | `fromJson()`, `loadFromJson()`, `loadField()` 등 |
-| `ToJsonable` | 직렬화 책임 | `toJson()`, `saveToJson()`, `saveFieldIf()` 등 |
-| `Jsonable` | 통합 인터페이스 | 모든 기능 + 편의 메서드들 |
+| `JsonableBase` | 기본 JSON 조작 | `getString()`, `setString()`, `beginObject()`, 컨텍스트 스택 관리 |
+| `FromJsonable` | 역직렬화 책임 | `fromJson()`, `loadFromJson()`, `loadField()` |
+| `ToJsonable` | 직렬화 책임 | `toJson()`, `saveToJson()`, `saveFieldIf()` |
+| `Jsonable` | 통합 인터페이스 | 모든 기능 + 편의 메서드 (`toString()`, `equals()` 등) |
+
+### 🔧 API 설계 철학
+
+**✅ 단순하고 명확한 두 가지 방식만 제공:**
+- **직접 설정**: 단순 구조용 (`setString(key, value)`, `getArray()` 등)
+- **Begin/End 구조**: 복잡한 중첩 구조용 (`beginObject()`, `pushString(value)` 등)
+
+**🎯 명확한 인터페이스 구분:**
+- **객체 필드**: `setString("name", value)` - key와 value 모두 필요
+- **배열 요소**: `pushString(value)` - value만 필요, key 없음
+
+**❌ 제거된 복잡성:**
+- `saveNestedObject()`, `loadNestedObject()` 등 함수 포인터 기반 헬퍼
+- 성능 오버헤드와 API 복잡성만 증가시키는 중복 기능들
 
 ### 🔧 타입 안전성 메커니즘
 
@@ -313,6 +342,8 @@ jsonable/
 - 📦 **Header-Only**: 별도 라이브러리 빌드 불필요
 - 🧠 **메모리 효율**: Virtual 상속으로 다이아몬드 문제 해결
 - ⚡ **컴파일 타임 최적화**: Template 특수화 활용
+- 🔧 **API 단순화**: 함수 포인터 오버헤드 제거로 성능 향상
+- 📈 **직접 처리**: Begin/End 방식으로 중간 레이어 제거
 
 ## 🔒 보안 및 안전성
 
